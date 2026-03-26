@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Value of Information Calculator | Meta-Analysis VOI</title>
+  <meta name="description" content="Compute EVPI and EVSI for meta-analysis evidence to determine whether another trial is worth conducting.">
+  <style>
+    /* ===== CSS Variables ===== */
+    :root {
+      --color-primary-50:  #eff6ff;
+      --color-primary-100: #dbeafe;
+      --color-primary-200: #bfdbfe;
+      --color-primary-300: #93c5fd;
+      --color-primary-400: #60a5fa;
+      --color-primary-500: #3b82f6;
+      --color-primary-600: #2563eb;
+      --color-primary-700: #1d4ed8;
+      --color-primary-800: #1e40af;
+
+      --color-success-500: #22c55e;
+      --color-success-600: #16a34a;
+      --color-warning-500: #f59e0b;
+      --color-warning-600: #d97706;
+      --color-danger-500:  #ef4444;
+      --color-danger-600:  #dc2626;
+
+      --bg-primary:   #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-tertiary:  #f1f5f9;
+      --text-primary:   #1e293b;
+      --text-secondary: #475569;
+      --text-muted:     #94a3b8;
+      --border-light:   #e2e8f0;
+      --border-medium:  #cbd5e1;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+
+      --text-xs:  0.75rem;
+      --text-sm:  0.875rem;
+      --text-base: 1rem;
+      --text-lg:  1.125rem;
+      --text-xl:  1.25rem;
+      --text-2xl: 1.5rem;
+
+      --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --font-mono: 'Consolas', 'Courier New', monospace;
+    }
+
+    /* ===== Dark Mode ===== */
+    .dark {
+      --bg-primary:   #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary:  #334155;
+      --text-primary:   #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted:     #64748b;
+      --border-light:   #334155;
+      --border-medium:  #475569;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -4px rgba(0,0,0,0.4);
+    }
+
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ===== Header ===== */
+    .app-header {
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border-light);
+      padding: var(--space-4) var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .app-header__title {
+      font-size: var(--text-xl);
+      font-weight: 700;
+      color: var(--color-primary-600);
+    }
+
+    .dark .app-header__title { color: var(--color-primary-400); }
+
+    .app-header__subtitle {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      margin-left: var(--space-3);
+    }
+
+    .app-header__actions {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--color-primary-500);
+      outline-offset: 2px;
+    }
+
+    .btn--primary {
+      background: var(--color-primary-600);
+      color: #fff;
+    }
+    .btn--primary:hover { background: var(--color-primary-700); }
+
+    .btn--secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border-color: var(--border-medium);
+    }
+    .btn--secondary:hover { background: var(--border-light); }
+
+    .btn--icon {
+      padding: var(--space-2);
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: var(--text-lg);
+      line-height: 1;
+    }
+    .btn--icon:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+
+    .btn--success { background: var(--color-success-600); color: #fff; }
+    .btn--success:hover { background: var(--color-success-500); }
+
+    .btn--warning { background: var(--color-warning-600); color: #fff; }
+    .btn--warning:hover { background: var(--color-warning-500); }
+
+    /* ===== Tab Navigation ===== */
+    .tab-nav {
+      display: flex;
+      background: var(--bg-primary);
+      border-bottom: 2px solid var(--border-light);
+      padding: 0 var(--space-6);
+      overflow-x: auto;
+    }
+
+    .tab-nav__btn {
+      padding: var(--space-3) var(--space-5);
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      margin-bottom: -2px;
+    }
+
+    .tab-nav__btn:hover {
+      color: var(--color-primary-600);
+      background: var(--color-primary-50);
+    }
+
+    .dark .tab-nav__btn:hover {
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .tab-nav__btn[aria-selected="true"] {
+      color: var(--color-primary-600);
+      border-bottom-color: var(--color-primary-600);
+    }
+
+    .dark .tab-nav__btn[aria-selected="true"] {
+      color: var(--color-primary-400);
+      border-bottom-color: var(--color-primary-400);
+    }
+
+    .tab-nav__btn:focus-visible {
+      outline: 2px solid var(--color-primary-500);
+      outline-offset: -2px;
+    }
+
+    /* ===== Tab Panels ===== */
+    .tab-panel {
+      display: none;
+      padding: var(--space-6);
+      max-width: 1100px;
+      margin: 0 auto;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .tab-panel[aria-hidden="false"] { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== Cards ===== */
+    .card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin-bottom: var(--space-5);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card__title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      margin-bottom: var(--space-4);
+      color: var(--text-primary);
+    }
+
+    .card__subtitle {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      margin-bottom: var(--space-4);
+    }
+
+    /* ===== Form Elements ===== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    .form-group label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: border-color 0.15s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--color-primary-500);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .form-group .hint {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ===== Results ===== */
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .result-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      text-align: center;
+    }
+
+    .result-box__label {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-1);
+    }
+
+    .result-box__value {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--color-primary-600);
+      font-family: var(--font-mono);
+    }
+
+    .dark .result-box__value { color: var(--color-primary-400); }
+
+    .result-box__unit {
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .result-box--highlight {
+      border-color: var(--color-primary-300);
+      background: var(--color-primary-50);
+    }
+
+    .dark .result-box--highlight {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: var(--color-primary-700);
+    }
+
+    .result-box--success {
+      border-color: var(--color-success-500);
+      background: rgba(34, 197, 94, 0.05);
+    }
+
+    .result-box--danger {
+      border-color: var(--color-danger-500);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    /* ===== SVG Plot Container ===== */
+    .plot-container {
+      width: 100%;
+      max-width: 700px;
+      margin: var(--space-5) auto;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      overflow: hidden;
+    }
+
+    .plot-container svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* ===== Interpretation Box ===== */
+    .interpretation {
+      background: var(--color-primary-50);
+      border-left: 4px solid var(--color-primary-500);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-5) 0;
+      font-size: var(--text-sm);
+      line-height: 1.7;
+      color: var(--text-primary);
+    }
+
+    .dark .interpretation {
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .interpretation strong {
+      color: var(--color-primary-700);
+    }
+
+    .dark .interpretation strong {
+      color: var(--color-primary-300);
+    }
+
+    /* ===== Example Buttons ===== */
+    .example-row {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-4);
+    }
+
+    .example-btn {
+      padding: var(--space-2) var(--space-4);
+      border: 1px dashed var(--color-primary-400);
+      border-radius: var(--radius-md);
+      background: var(--color-primary-50);
+      color: var(--color-primary-700);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .dark .example-btn {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--color-primary-300);
+      border-color: var(--color-primary-700);
+    }
+
+    .example-btn:hover {
+      background: var(--color-primary-100);
+      border-style: solid;
+    }
+
+    .example-btn:focus-visible {
+      outline: 2px solid var(--color-primary-500);
+      outline-offset: 2px;
+    }
+
+    /* ===== Table ===== */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .data-table th {
+      background: var(--bg-tertiary);
+      padding: var(--space-2) var(--space-3);
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 2px solid var(--border-medium);
+    }
+
+    .data-table td {
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--border-light);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+    }
+
+    .data-table tr:hover td {
+      background: var(--bg-secondary);
+    }
+
+    /* ===== Report ===== */
+    .report-text {
+      font-size: var(--text-sm);
+      line-height: 1.8;
+      color: var(--text-primary);
+    }
+
+    .report-text p {
+      margin-bottom: var(--space-4);
+    }
+
+    .report-text .ref {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-2);
+      padding-left: var(--space-4);
+      border-left: 2px solid var(--border-light);
+    }
+
+    /* ===== Optimal Badge ===== */
+    .optimal-badge {
+      display: inline-block;
+      padding: var(--space-1) var(--space-3);
+      border-radius: 999px;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      background: var(--color-success-600);
+      color: #fff;
+    }
+
+    /* ===== Footer ===== */
+    .app-footer {
+      text-align: center;
+      padding: var(--space-6);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-light);
+      margin-top: var(--space-8);
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 640px) {
+      .app-header { padding: var(--space-3) var(--space-4); flex-wrap: wrap; gap: var(--space-2); }
+      .tab-nav { padding: 0 var(--space-3); }
+      .tab-panel { padding: var(--space-4); }
+      .form-grid { grid-template-columns: 1fr; }
+      .result-grid { grid-template-columns: 1fr 1fr; }
+      .app-header__subtitle { display: none; }
+    }
+
+    /* ===== Utility ===== */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    .mt-4 { margin-top: var(--space-4); }
+    .mt-5 { margin-top: var(--space-5); }
+    .mb-4 { margin-bottom: var(--space-4); }
+    .text-center { text-align: center; }
+    .text-muted { color: var(--text-muted); }
+    .text-sm { font-size: var(--text-sm); }
+    .text-xs { font-size: var(--text-xs); }
+    .mono { font-family: var(--font-mono); }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header class="app-header">
+    <div style="display:flex; align-items:baseline;">
+      <h1 class="app-header__title">VOI Calculator</h1>
+      <span class="app-header__subtitle">Expected Value of Information for Meta-Analysis</span>
+    </div>
+    <div class="app-header__actions">
+      <button class="btn--icon" id="btn-dark-mode" aria-label="Toggle dark mode" title="Toggle dark mode">&#9790;</button>
+    </div>
+  </header>
+
+  <!-- ===== Tab Navigation ===== -->
+  <nav class="tab-nav" role="tablist" aria-label="VOI Calculator sections">
+    <button class="tab-nav__btn" role="tab" id="tab-input"  aria-controls="panel-input"  aria-selected="true"  tabindex="0">Data Input</button>
+    <button class="tab-nav__btn" role="tab" id="tab-evpi"   aria-controls="panel-evpi"   aria-selected="false" tabindex="-1">EVPI Results</button>
+    <button class="tab-nav__btn" role="tab" id="tab-evsi"   aria-controls="panel-evsi"   aria-selected="false" tabindex="-1">EVSI Analysis</button>
+    <button class="tab-nav__btn" role="tab" id="tab-report" aria-controls="panel-report" aria-selected="false" tabindex="-1">Report</button>
+  </nav>
+
+  <!-- ===== Tab Panel: Data Input ===== -->
+  <div class="tab-panel" role="tabpanel" id="panel-input" aria-labelledby="tab-input" aria-hidden="false">
+
+    <!-- Examples -->
+    <div class="card">
+      <div class="card__title">Built-in Examples</div>
+      <p class="card__subtitle">Load a pre-configured scenario to explore the calculator.</p>
+      <div class="example-row">
+        <button class="example-btn" id="ex-txa" aria-label="Load TXA for trauma example">TXA for Trauma (clear benefit, low VOI)</button>
+        <button class="example-btn" id="ex-glucose" aria-label="Load intensive glucose ICU example">Intensive Glucose ICU (uncertain, high VOI)</button>
+      </div>
+    </div>
+
+    <!-- Meta-analysis evidence -->
+    <div class="card">
+      <div class="card__title">Current Meta-Analysis Evidence</div>
+      <p class="card__subtitle">Enter summary statistics from your existing meta-analysis.</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="inp-effect">Pooled Effect Estimate</label>
+          <input type="number" id="inp-effect" step="any" placeholder="e.g. -0.15">
+          <span class="hint">On natural scale (log-OR, SMD, etc.)</span>
+        </div>
+        <div class="form-group">
+          <label for="inp-se">Standard Error of Pooled Effect</label>
+          <input type="number" id="inp-se" step="any" min="0.0001" placeholder="e.g. 0.08">
+          <span class="hint">SE of the pooled estimate</span>
+        </div>
+        <div class="form-group">
+          <label for="inp-tau2">Between-Study Variance (tau&sup2;)</label>
+          <input type="number" id="inp-tau2" step="any" min="0" placeholder="e.g. 0.02" value="0">
+          <span class="hint">From random-effects model (0 if fixed)</span>
+        </div>
+        <div class="form-group">
+          <label for="inp-k">Number of Studies (k)</label>
+          <input type="number" id="inp-k" step="1" min="1" placeholder="e.g. 5" value="5">
+          <span class="hint">Studies in current meta-analysis</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decision parameters -->
+    <div class="card">
+      <div class="card__title">Decision Parameters</div>
+      <p class="card__subtitle">Define what makes the treatment worthwhile and the consequences of decisions.</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="inp-threshold">Decision Threshold</label>
+          <input type="number" id="inp-threshold" step="any" placeholder="e.g. 0">
+          <span class="hint">Effect size making treatment worthwhile</span>
+        </div>
+        <div class="form-group">
+          <label for="inp-direction">Benefit Direction</label>
+          <select id="inp-direction">
+            <option value="below">Effect below threshold = beneficial</option>
+            <option value="above">Effect above threshold = beneficial</option>
+          </select>
+          <span class="hint">e.g. RR &lt; 1 means benefit</span>
+        </div>
+        <div class="form-group">
+          <label for="inp-benefit">Net Benefit of Correct Decision</label>
+          <input type="number" id="inp-benefit" step="any" min="0" placeholder="e.g. 50000">
+          <span class="hint">Value in monetary units or QALYs</span>
+        </div>
+        <div class="form-group">
+          <label for="inp-npop">Population Affected (N_pop)</label>
+          <input type="number" id="inp-npop" step="1" min="1" placeholder="e.g. 100000">
+          <span class="hint">Number of patients who benefit</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cost parameters -->
+    <div class="card">
+      <div class="card__title">Trial Cost Parameters</div>
+      <p class="card__subtitle">Used for EVSI analysis to determine optimal trial size.</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="inp-cost-patient">Cost per Patient in New Trial</label>
+          <input type="number" id="inp-cost-patient" step="any" min="0" placeholder="e.g. 5000">
+          <span class="hint">Average per-patient cost (same units as benefit)</span>
+        </div>
+        <div class="form-group">
+          <label for="inp-v-typical">Typical Within-Study Variance</label>
+          <input type="number" id="inp-v-typical" step="any" min="0.0001" placeholder="e.g. 0.5">
+          <span class="hint">Expected variance for a single new trial</span>
+        </div>
+        <div class="form-group">
+          <label for="inp-fixed-cost">Fixed Trial Cost (overhead)</label>
+          <input type="number" id="inp-fixed-cost" step="any" min="0" placeholder="e.g. 500000" value="0">
+          <span class="hint">Setup/overhead cost independent of N</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex-between">
+      <button class="btn btn--primary" id="btn-compute" aria-label="Compute VOI results">Compute VOI</button>
+      <div style="display:flex; gap:var(--space-2);">
+        <button class="btn btn--secondary" id="btn-save" aria-label="Save inputs to local storage">Save</button>
+        <button class="btn btn--secondary" id="btn-load" aria-label="Load inputs from local storage">Load</button>
+        <button class="btn btn--secondary" id="btn-clear" aria-label="Clear all inputs">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Tab Panel: EVPI Results ===== -->
+  <div class="tab-panel" role="tabpanel" id="panel-evpi" aria-labelledby="tab-evpi" aria-hidden="true">
+    <div id="evpi-content">
+      <p class="text-muted text-center mt-5">Enter data and click "Compute VOI" to see EVPI results.</p>
+    </div>
+  </div>
+
+  <!-- ===== Tab Panel: EVSI Analysis ===== -->
+  <div class="tab-panel" role="tabpanel" id="panel-evsi" aria-labelledby="tab-evsi" aria-hidden="true">
+    <div id="evsi-content">
+      <p class="text-muted text-center mt-5">Enter data and click "Compute VOI" to see EVSI analysis.</p>
+    </div>
+  </div>
+
+  <!-- ===== Tab Panel: Report ===== -->
+  <div class="tab-panel" role="tabpanel" id="panel-report" aria-labelledby="tab-report" aria-hidden="true">
+    <div id="report-content">
+      <p class="text-muted text-center mt-5">Compute VOI first to generate the report.</p>
+    </div>
+  </div>
+
+  <!-- ===== Footer ===== -->
+  <footer class="app-footer">
+    VOI Calculator v1.0 | Value of Information for Meta-Analysis Evidence
+  </footer>
+
+  <script>
+  /* ============================================================
+     VOI Calculator — IIFE
+     ============================================================ */
+  (function() {
+    'use strict';
+
+    /* ---------- Constants ---------- */
+    var STORAGE_KEY = 'voi-data';
+    var DARK_KEY    = 'voi-dark-mode';
+
+    /* ---------- DOM refs ---------- */
+    var $  = function(id) { return document.getElementById(id); };
+
+    var tabs    = document.querySelectorAll('[role="tab"]');
+    var panels  = document.querySelectorAll('[role="tabpanel"]');
+
+    /* ---------- Utility: escapeHtml ---------- */
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /* ---------- Utility: csvSafe ---------- */
+    function csvSafe(val) {
+      if (val == null) return '';
+      var s = String(val);
+      // Guard against formula injection (but NOT leading minus for negative numbers)
+      if (/^[=+@\t\r]/.test(s)) {
+        s = "'" + s;
+      }
+      if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
+        s = '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }
+
+    /* ---------- Utility: formatNum ---------- */
+    function formatNum(x, digits) {
+      if (x == null || isNaN(x)) return '--';
+      if (typeof digits === 'undefined') digits = 2;
+      if (Math.abs(x) >= 1e6) return x.toExponential(digits);
+      return Number(x.toFixed(digits)).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: digits });
+    }
+
+    function formatCurrency(x) {
+      if (x == null || isNaN(x)) return '--';
+      if (Math.abs(x) >= 1e9) return (x / 1e9).toFixed(2) + 'B';
+      if (Math.abs(x) >= 1e6) return (x / 1e6).toFixed(2) + 'M';
+      if (Math.abs(x) >= 1e3) return (x / 1e3).toFixed(1) + 'K';
+      return x.toFixed(0);
+    }
+
+    /* ---------- Normal CDF (Abramowitz & Stegun) ---------- */
+    function normalCDF(x) {
+      if (x === Infinity) return 1;
+      if (x === -Infinity) return 0;
+      var a1 =  0.254829592;
+      var a2 = -0.284496736;
+      var a3 =  1.421413741;
+      var a4 = -1.453152027;
+      var a5 =  1.061405429;
+      var p  =  0.3275911;
+      var sign = 1;
+      if (x < 0) { sign = -1; }
+      x = Math.abs(x) / Math.SQRT2;
+      var t = 1.0 / (1.0 + p * x);
+      var y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+      return 0.5 * (1.0 + sign * y);
+    }
+
+    /* ---------- Normal PDF ---------- */
+    function normalPDF(x) {
+      return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+    }
+
+    /* ---------- EVPI Calculation ---------- */
+    function calcEVPI(mu, se, tau2, threshold, direction, netBenefit, nPop) {
+      var sigmaTotal = Math.sqrt(se * se + tau2);
+      // z = how far the threshold is from the mean in SD units
+      // P(wrong) depends on direction
+      var z;
+      if (direction === 'below') {
+        // Benefit when effect < threshold; wrong if true effect >= threshold
+        // P(wrong) = P(theta >= threshold) = 1 - Phi((threshold - mu)/sigma)
+        z = (threshold - mu) / sigmaTotal;
+        var pWrong;
+        if (mu < threshold) {
+          // Current decision: treat (since pooled < threshold, treatment looks beneficial)
+          // Wrong if true effect >= threshold
+          pWrong = 1 - normalCDF(z);
+        } else {
+          // Current decision: don't treat
+          // Wrong if true effect < threshold
+          pWrong = normalCDF(z);
+        }
+      } else {
+        // Benefit when effect > threshold; wrong if true effect <= threshold
+        z = (threshold - mu) / sigmaTotal;
+        if (mu > threshold) {
+          // Current decision: treat
+          // Wrong if true effect <= threshold
+          pWrong = normalCDF(z);
+        } else {
+          // Current decision: don't treat
+          // Wrong if true effect > threshold
+          pWrong = 1 - normalCDF(z);
+        }
+      }
+
+      // Simplified: P(wrong decision) = probability mass on the wrong side
+      // This is min(Phi(z), 1 - Phi(z)) — the tail probability
+      // Actually: regardless of direction, P(wrong) = the smaller tail
+      // More precisely: P(wrong) = Phi(-|z|) = min(Phi(z), 1-Phi(z))
+      // Because the current best decision picks the side with more mass
+      pWrong = Math.min(normalCDF(z), 1 - normalCDF(z));
+
+      var evpi = nPop * pWrong * netBenefit;
+      var evpiPerPatient = evpi / nPop;
+
+      return {
+        sigmaTotal: sigmaTotal,
+        z: z,
+        pWrong: pWrong,
+        evpi: evpi,
+        evpiPerPatient: evpiPerPatient,
+        mu: mu,
+        threshold: threshold,
+        direction: direction,
+        netBenefit: netBenefit,
+        nPop: nPop,
+        se: se,
+        tau2: tau2
+      };
+    }
+
+    /* ---------- EVSI Calculation for given n ---------- */
+    function calcEVSI(evpiResult, nNew, vTypical) {
+      var mu        = evpiResult.mu;
+      var se        = evpiResult.se;
+      var tau2      = evpiResult.tau2;
+      var threshold = evpiResult.threshold;
+      var netBenefit = evpiResult.netBenefit;
+      var nPop      = evpiResult.nPop;
+
+      var seNew = Math.sqrt(vTypical / nNew);
+      // Updated posterior precision = prior precision + new data precision
+      var priorPrec = 1 / (se * se + tau2);
+      var newPrec   = 1 / (seNew * seNew);
+      var postPrec  = priorPrec + newPrec;
+      var sePosterior = 1 / Math.sqrt(postPrec);
+
+      var zPost = (threshold - mu) / sePosterior;
+      var pWrongPost = Math.min(normalCDF(zPost), 1 - normalCDF(zPost));
+
+      var evsi = nPop * (evpiResult.pWrong - pWrongPost) * netBenefit;
+      if (evsi < 0) evsi = 0; // EVSI cannot be negative
+
+      return {
+        nNew: nNew,
+        seNew: seNew,
+        sePosterior: sePosterior,
+        pWrongPost: pWrongPost,
+        evsi: evsi,
+        evsiPerPatient: evsi / nPop
+      };
+    }
+
+    /* ---------- EVSI Curve: compute for range of n ---------- */
+    function calcEVSICurve(evpiResult, vTypical, costPerPatient, fixedCost) {
+      var points = [];
+      var sizes = [
+        10, 20, 50, 100, 150, 200, 300, 400, 500, 750,
+        1000, 1500, 2000, 3000, 5000, 7500, 10000, 15000, 20000, 50000
+      ];
+
+      var bestNetBenefit = -Infinity;
+      var optimalN = null;
+
+      for (var i = 0; i < sizes.length; i++) {
+        var n = sizes[i];
+        var evsiRes = calcEVSI(evpiResult, n, vTypical);
+        var trialCost = fixedCost + costPerPatient * n;
+        var netValue = evsiRes.evsi - trialCost;
+
+        if (netValue > bestNetBenefit) {
+          bestNetBenefit = netValue;
+          optimalN = n;
+        }
+
+        points.push({
+          n: n,
+          evsi: evsiRes.evsi,
+          trialCost: trialCost,
+          netValue: netValue,
+          sePosterior: evsiRes.sePosterior,
+          pWrongPost: evsiRes.pWrongPost,
+          pctEVPI: evpiResult.evpi > 0 ? (evsiRes.evsi / evpiResult.evpi * 100) : 0
+        });
+      }
+
+      return {
+        points: points,
+        optimalN: optimalN,
+        bestNetBenefit: bestNetBenefit
+      };
+    }
+
+    /* ---------- SVG Helpers ---------- */
+    function svgEl(tag, attrs) {
+      var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      if (attrs) {
+        for (var k in attrs) {
+          if (attrs.hasOwnProperty(k)) el.setAttribute(k, attrs[k]);
+        }
+      }
+      return el;
+    }
+
+    /* ---------- Render EVPI Posterior Plot (SVG) ---------- */
+    function renderPosteriorPlot(container, evpiResult) {
+      var mu    = evpiResult.mu;
+      var sigma = evpiResult.sigmaTotal;
+      var thr   = evpiResult.threshold;
+      var dir   = evpiResult.direction;
+
+      var W = 650, H = 320;
+      var pad = { top: 30, right: 30, bottom: 60, left: 50 };
+      var plotW = W - pad.left - pad.right;
+      var plotH = H - pad.top - pad.bottom;
+
+      var xMin = mu - 4 * sigma;
+      var xMax = mu + 4 * sigma;
+
+      function xScale(v) { return pad.left + (v - xMin) / (xMax - xMin) * plotW; }
+      function yScale(v) { return pad.top + plotH - v / normalPDF(0) * plotH * sigma; }
+
+      var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, 'aria-label': 'Posterior density with wrong-decision region shaded' });
+
+      // Background
+      svg.appendChild(svgEl('rect', { x: 0, y: 0, width: W, height: H, fill: 'var(--bg-primary)', rx: 8 }));
+
+      // Grid lines
+      for (var g = 0; g <= 4; g++) {
+        var gy = pad.top + (plotH / 4) * g;
+        svg.appendChild(svgEl('line', { x1: pad.left, y1: gy, x2: W - pad.right, y2: gy, stroke: 'var(--border-light)', 'stroke-width': 0.5 }));
+      }
+
+      // Build density path + fill
+      var steps = 200;
+      var dx = (xMax - xMin) / steps;
+      var pathD = '';
+      var fillD = '';
+      var wrongFillD = '';
+
+      // Determine wrong side
+      // If direction=below & mu < threshold => wrong side is right of threshold (theta >= thr)
+      // If direction=below & mu >= threshold => wrong side is left of threshold
+      // If direction=above & mu > threshold => wrong side is left of threshold
+      // If direction=above & mu <= threshold => wrong side is right of threshold
+      var wrongSide;
+      if (dir === 'below') {
+        wrongSide = (mu < thr) ? 'right' : 'left';
+      } else {
+        wrongSide = (mu > thr) ? 'left' : 'right';
+      }
+
+      for (var i = 0; i <= steps; i++) {
+        var x = xMin + i * dx;
+        var z = (x - mu) / sigma;
+        var y = normalPDF(z);
+        var px = xScale(x);
+        var py = yScale(y);
+
+        if (i === 0) {
+          pathD = 'M' + px + ',' + py;
+          fillD = 'M' + px + ',' + (pad.top + plotH) + ' L' + px + ',' + py;
+        } else {
+          pathD += ' L' + px + ',' + py;
+          fillD += ' L' + px + ',' + py;
+        }
+
+        // Wrong-region fill
+        var inWrong = (wrongSide === 'right') ? (x >= thr) : (x <= thr);
+        if (inWrong) {
+          if (!wrongFillD) {
+            wrongFillD = 'M' + px + ',' + (pad.top + plotH) + ' L' + px + ',' + py;
+          } else {
+            wrongFillD += ' L' + px + ',' + py;
+          }
+        }
+      }
+
+      fillD += ' L' + xScale(xMax) + ',' + (pad.top + plotH) + ' Z';
+
+      // Close wrong fill
+      if (wrongFillD) {
+        var closeX = (wrongSide === 'right') ? xScale(xMax) : xScale(xMin);
+        wrongFillD += ' L' + closeX + ',' + (pad.top + plotH) + ' Z';
+      }
+
+      // Density fill
+      svg.appendChild(svgEl('path', { d: fillD, fill: 'var(--color-primary-200)', opacity: '0.3' }));
+
+      // Wrong region fill
+      if (wrongFillD) {
+        svg.appendChild(svgEl('path', { d: wrongFillD, fill: 'rgba(239, 68, 68, 0.35)' }));
+      }
+
+      // Density line
+      svg.appendChild(svgEl('path', { d: pathD, fill: 'none', stroke: 'var(--color-primary-600)', 'stroke-width': 2.5 }));
+
+      // Threshold line
+      var thrX = xScale(thr);
+      if (thrX >= pad.left && thrX <= W - pad.right) {
+        svg.appendChild(svgEl('line', {
+          x1: thrX, y1: pad.top, x2: thrX, y2: pad.top + plotH,
+          stroke: 'var(--color-danger-500)', 'stroke-width': 2, 'stroke-dasharray': '6,4'
+        }));
+        // Label
+        var thrLabel = svgEl('text', {
+          x: thrX, y: pad.top - 8,
+          'text-anchor': 'middle', 'font-size': '11', fill: 'var(--color-danger-500)', 'font-weight': '600'
+        });
+        thrLabel.textContent = 'Threshold = ' + formatNum(thr, 3);
+        svg.appendChild(thrLabel);
+      }
+
+      // Mean line
+      var muX = xScale(mu);
+      svg.appendChild(svgEl('line', {
+        x1: muX, y1: pad.top, x2: muX, y2: pad.top + plotH,
+        stroke: 'var(--color-primary-700)', 'stroke-width': 1.5, 'stroke-dasharray': '3,3'
+      }));
+
+      // X axis
+      svg.appendChild(svgEl('line', {
+        x1: pad.left, y1: pad.top + plotH, x2: W - pad.right, y2: pad.top + plotH,
+        stroke: 'var(--text-secondary)', 'stroke-width': 1
+      }));
+
+      // X tick labels
+      var nTicks = 7;
+      for (var t = 0; t < nTicks; t++) {
+        var tv = xMin + (xMax - xMin) / (nTicks - 1) * t;
+        var tx = xScale(tv);
+        svg.appendChild(svgEl('line', { x1: tx, y1: pad.top + plotH, x2: tx, y2: pad.top + plotH + 5, stroke: 'var(--text-secondary)', 'stroke-width': 1 }));
+        var tl = svgEl('text', { x: tx, y: pad.top + plotH + 20, 'text-anchor': 'middle', 'font-size': '10', fill: 'var(--text-secondary)' });
+        tl.textContent = formatNum(tv, 2);
+        svg.appendChild(tl);
+      }
+
+      // Axis label
+      var xLabel = svgEl('text', { x: W / 2, y: H - 8, 'text-anchor': 'middle', 'font-size': '12', fill: 'var(--text-secondary)', 'font-weight': '600' });
+      xLabel.textContent = 'Effect Size';
+      svg.appendChild(xLabel);
+
+      // Legend
+      var legY = pad.top + 15;
+      svg.appendChild(svgEl('rect', { x: W - pad.right - 170, y: legY - 12, width: 160, height: 50, fill: 'var(--bg-primary)', stroke: 'var(--border-light)', rx: 4, opacity: '0.9' }));
+
+      svg.appendChild(svgEl('rect', { x: W - pad.right - 160, y: legY - 2, width: 12, height: 12, fill: 'var(--color-primary-200)', opacity: '0.6' }));
+      var l1 = svgEl('text', { x: W - pad.right - 143, y: legY + 8, 'font-size': '10', fill: 'var(--text-secondary)' });
+      l1.textContent = 'Posterior density';
+      svg.appendChild(l1);
+
+      svg.appendChild(svgEl('rect', { x: W - pad.right - 160, y: legY + 16, width: 12, height: 12, fill: 'rgba(239, 68, 68, 0.35)' }));
+      var l2 = svgEl('text', { x: W - pad.right - 143, y: legY + 26, 'font-size': '10', fill: 'var(--text-secondary)' });
+      l2.textContent = 'P(wrong) = ' + formatNum(evpiResult.pWrong * 100, 1) + '%';
+      svg.appendChild(l2);
+
+      container.innerHTML = '';
+      container.appendChild(svg);
+    }
+
+    /* ---------- Render EVSI Curve Plot (SVG) ---------- */
+    function renderEVSICurvePlot(container, curveData, evpiResult) {
+      var pts = curveData.points;
+      if (!pts || pts.length === 0) return;
+
+      var W = 650, H = 350;
+      var pad = { top: 30, right: 30, bottom: 60, left: 70 };
+      var plotW = W - pad.left - pad.right;
+      var plotH = H - pad.top - pad.bottom;
+
+      var maxN = pts[pts.length - 1].n;
+      var maxY = Math.max(evpiResult.evpi, pts[pts.length - 1].trialCost);
+      for (var i = 0; i < pts.length; i++) {
+        if (pts[i].evsi > maxY) maxY = pts[i].evsi;
+        if (pts[i].trialCost > maxY) maxY = pts[i].trialCost;
+      }
+      maxY *= 1.1;
+
+      function xScale(v) { return pad.left + (v / maxN) * plotW; }
+      function yScale(v) { return pad.top + plotH - (v / maxY) * plotH; }
+
+      var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, 'aria-label': 'EVSI and trial cost vs sample size' });
+      svg.appendChild(svgEl('rect', { x: 0, y: 0, width: W, height: H, fill: 'var(--bg-primary)', rx: 8 }));
+
+      // Grid
+      for (var g = 0; g <= 4; g++) {
+        var gy = pad.top + (plotH / 4) * g;
+        svg.appendChild(svgEl('line', { x1: pad.left, y1: gy, x2: W - pad.right, y2: gy, stroke: 'var(--border-light)', 'stroke-width': 0.5 }));
+        var yLabel = svgEl('text', { x: pad.left - 8, y: gy + 4, 'text-anchor': 'end', 'font-size': '10', fill: 'var(--text-muted)' });
+        yLabel.textContent = formatCurrency(maxY - (maxY / 4) * g);
+        svg.appendChild(yLabel);
+      }
+
+      // EVPI horizontal line
+      var evpiY = yScale(evpiResult.evpi);
+      svg.appendChild(svgEl('line', {
+        x1: pad.left, y1: evpiY, x2: W - pad.right, y2: evpiY,
+        stroke: 'var(--color-warning-500)', 'stroke-width': 1.5, 'stroke-dasharray': '8,4'
+      }));
+      var evpiLabel = svgEl('text', { x: W - pad.right - 5, y: evpiY - 6, 'text-anchor': 'end', 'font-size': '10', fill: 'var(--color-warning-500)', 'font-weight': '600' });
+      evpiLabel.textContent = 'EVPI = ' + formatCurrency(evpiResult.evpi);
+      svg.appendChild(evpiLabel);
+
+      // EVSI curve
+      var evsiPath = '';
+      for (var i = 0; i < pts.length; i++) {
+        var px = xScale(pts[i].n);
+        var py = yScale(pts[i].evsi);
+        if (i === 0) evsiPath = 'M' + px + ',' + py;
+        else evsiPath += ' L' + px + ',' + py;
+      }
+      svg.appendChild(svgEl('path', { d: evsiPath, fill: 'none', stroke: 'var(--color-primary-600)', 'stroke-width': 2.5 }));
+
+      // Cost line
+      var costPath = '';
+      for (var i = 0; i < pts.length; i++) {
+        var px = xScale(pts[i].n);
+        var py = yScale(pts[i].trialCost);
+        if (i === 0) costPath = 'M' + px + ',' + py;
+        else costPath += ' L' + px + ',' + py;
+      }
+      svg.appendChild(svgEl('path', { d: costPath, fill: 'none', stroke: 'var(--color-danger-500)', 'stroke-width': 2, 'stroke-dasharray': '5,3' }));
+
+      // Data points on EVSI curve
+      for (var i = 0; i < pts.length; i++) {
+        var px = xScale(pts[i].n);
+        var py = yScale(pts[i].evsi);
+        var isOpt = (pts[i].n === curveData.optimalN);
+        svg.appendChild(svgEl('circle', {
+          cx: px, cy: py, r: isOpt ? 6 : 3,
+          fill: isOpt ? 'var(--color-success-600)' : 'var(--color-primary-600)',
+          stroke: isOpt ? '#fff' : 'none',
+          'stroke-width': isOpt ? 2 : 0
+        }));
+      }
+
+      // Axes
+      svg.appendChild(svgEl('line', { x1: pad.left, y1: pad.top + plotH, x2: W - pad.right, y2: pad.top + plotH, stroke: 'var(--text-secondary)', 'stroke-width': 1 }));
+      svg.appendChild(svgEl('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: pad.top + plotH, stroke: 'var(--text-secondary)', 'stroke-width': 1 }));
+
+      // X ticks
+      var xTicks = [0, maxN * 0.25, maxN * 0.5, maxN * 0.75, maxN];
+      for (var t = 0; t < xTicks.length; t++) {
+        var tx = xScale(xTicks[t]);
+        svg.appendChild(svgEl('line', { x1: tx, y1: pad.top + plotH, x2: tx, y2: pad.top + plotH + 5, stroke: 'var(--text-secondary)', 'stroke-width': 1 }));
+        var tl = svgEl('text', { x: tx, y: pad.top + plotH + 20, 'text-anchor': 'middle', 'font-size': '10', fill: 'var(--text-secondary)' });
+        tl.textContent = formatCurrency(xTicks[t]);
+        svg.appendChild(tl);
+      }
+
+      // Axis labels
+      var xAxisLabel = svgEl('text', { x: W / 2, y: H - 8, 'text-anchor': 'middle', 'font-size': '12', fill: 'var(--text-secondary)', 'font-weight': '600' });
+      xAxisLabel.textContent = 'New Trial Sample Size (n)';
+      svg.appendChild(xAxisLabel);
+
+      // Legend
+      var legX = pad.left + 10, legY = pad.top + 10;
+      svg.appendChild(svgEl('rect', { x: legX, y: legY, width: 150, height: 62, fill: 'var(--bg-primary)', stroke: 'var(--border-light)', rx: 4, opacity: '0.9' }));
+
+      svg.appendChild(svgEl('line', { x1: legX + 8, y1: legY + 14, x2: legX + 28, y2: legY + 14, stroke: 'var(--color-primary-600)', 'stroke-width': 2.5 }));
+      var ll1 = svgEl('text', { x: legX + 34, y: legY + 18, 'font-size': '10', fill: 'var(--text-secondary)' });
+      ll1.textContent = 'EVSI';
+      svg.appendChild(ll1);
+
+      svg.appendChild(svgEl('line', { x1: legX + 8, y1: legY + 30, x2: legX + 28, y2: legY + 30, stroke: 'var(--color-danger-500)', 'stroke-width': 2, 'stroke-dasharray': '5,3' }));
+      var ll2 = svgEl('text', { x: legX + 34, y: legY + 34, 'font-size': '10', fill: 'var(--text-secondary)' });
+      ll2.textContent = 'Trial Cost';
+      svg.appendChild(ll2);
+
+      svg.appendChild(svgEl('line', { x1: legX + 8, y1: legY + 46, x2: legX + 28, y2: legY + 46, stroke: 'var(--color-warning-500)', 'stroke-width': 1.5, 'stroke-dasharray': '8,4' }));
+      var ll3 = svgEl('text', { x: legX + 34, y: legY + 50, 'font-size': '10', fill: 'var(--text-secondary)' });
+      ll3.textContent = 'EVPI (upper bound)';
+      svg.appendChild(ll3);
+
+      container.innerHTML = '';
+      container.appendChild(svg);
+    }
+
+    /* ---------- Render EVPI Panel ---------- */
+    function renderEVPI(evpiResult) {
+      var html = '';
+
+      // Results summary
+      html += '<div class="card">';
+      html += '<div class="card__title">EVPI Summary</div>';
+      html += '<div class="result-grid">';
+
+      html += '<div class="result-box result-box--highlight">';
+      html += '<div class="result-box__label">Total EVPI</div>';
+      html += '<div class="result-box__value">' + escapeHtml(formatCurrency(evpiResult.evpi)) + '</div>';
+      html += '<div class="result-box__unit">monetary units</div>';
+      html += '</div>';
+
+      html += '<div class="result-box">';
+      html += '<div class="result-box__label">EVPI per Patient</div>';
+      html += '<div class="result-box__value">' + escapeHtml(formatNum(evpiResult.evpiPerPatient, 2)) + '</div>';
+      html += '<div class="result-box__unit">per patient affected</div>';
+      html += '</div>';
+
+      html += '<div class="result-box">';
+      html += '<div class="result-box__label">P(Wrong Decision)</div>';
+      html += '<div class="result-box__value">' + escapeHtml(formatNum(evpiResult.pWrong * 100, 2)) + '%</div>';
+      html += '<div class="result-box__unit">probability</div>';
+      html += '</div>';
+
+      html += '<div class="result-box">';
+      html += '<div class="result-box__label">Total Uncertainty (sigma)</div>';
+      html += '<div class="result-box__value">' + escapeHtml(formatNum(evpiResult.sigmaTotal, 4)) + '</div>';
+      html += '<div class="result-box__unit">sqrt(SE&sup2; + tau&sup2;)</div>';
+      html += '</div>';
+
+      html += '</div></div>';
+
+      // Interpretation
+      var pctWrong = evpiResult.pWrong * 100;
+      var verdictClass, verdictText;
+      if (pctWrong < 5) {
+        verdictClass = 'result-box--success';
+        verdictText = 'Low uncertainty: The current evidence strongly supports the decision. Additional research has limited expected value.';
+      } else if (pctWrong < 20) {
+        verdictClass = '';
+        verdictText = 'Moderate uncertainty: There is a non-trivial chance the current decision is wrong. Consider whether EVPI exceeds the cost of feasible research.';
+      } else {
+        verdictClass = 'result-box--danger';
+        verdictText = 'High uncertainty: There is substantial probability that the current decision is wrong. The value of further research is high.';
+      }
+
+      html += '<div class="interpretation">';
+      html += '<strong>Interpretation:</strong> ' + escapeHtml(verdictText);
+      html += '</div>';
+
+      // Parameters echo
+      html += '<div class="card">';
+      html += '<div class="card__title">Input Parameters</div>';
+      html += '<table class="data-table"><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody>';
+      html += '<tr><td>Pooled effect (mu)</td><td>' + escapeHtml(formatNum(evpiResult.mu, 4)) + '</td></tr>';
+      html += '<tr><td>SE of pooled effect</td><td>' + escapeHtml(formatNum(evpiResult.se, 4)) + '</td></tr>';
+      html += '<tr><td>tau&sup2;</td><td>' + escapeHtml(formatNum(evpiResult.tau2, 4)) + '</td></tr>';
+      html += '<tr><td>Decision threshold</td><td>' + escapeHtml(formatNum(evpiResult.threshold, 4)) + '</td></tr>';
+      html += '<tr><td>Direction</td><td>' + escapeHtml(evpiResult.direction === 'below' ? 'Below threshold = beneficial' : 'Above threshold = beneficial') + '</td></tr>';
+      html += '<tr><td>Net benefit per correct decision</td><td>' + escapeHtml(formatNum(evpiResult.netBenefit, 0)) + '</td></tr>';
+      html += '<tr><td>Population affected (N_pop)</td><td>' + escapeHtml(formatNum(evpiResult.nPop, 0)) + '</td></tr>';
+      html += '</tbody></table>';
+      html += '</div>';
+
+      // Plot
+      html += '<div class="card">';
+      html += '<div class="card__title">Posterior Density with Decision Region</div>';
+      html += '<p class="card__subtitle">The shaded red area represents the probability that the current decision is wrong.</p>';
+      html += '<div class="plot-container" id="evpi-plot"></div>';
+      html += '</div>';
+
+      $('evpi-content').innerHTML = html;
+
+      // Render SVG after DOM update
+      renderPosteriorPlot($('evpi-plot'), evpiResult);
+    }
+
+    /* ---------- Render EVSI Panel ---------- */
+    function renderEVSI(evpiResult, curveData) {
+      var pts = curveData.points;
+      var html = '';
+
+      // Optimal result
+      var optPoint = null;
+      for (var i = 0; i < pts.length; i++) {
+        if (pts[i].n === curveData.optimalN) { optPoint = pts[i]; break; }
+      }
+
+      html += '<div class="card">';
+      html += '<div class="card__title">Optimal New Trial Design</div>';
+      html += '<div class="result-grid">';
+
+      html += '<div class="result-box result-box--highlight">';
+      html += '<div class="result-box__label">Optimal Sample Size</div>';
+      html += '<div class="result-box__value">' + escapeHtml(formatNum(curveData.optimalN, 0)) + '</div>';
+      html += '<div class="result-box__unit"><span class="optimal-badge">Optimal n</span></div>';
+      html += '</div>';
+
+      if (optPoint) {
+        html += '<div class="result-box">';
+        html += '<div class="result-box__label">EVSI at Optimal n</div>';
+        html += '<div class="result-box__value">' + escapeHtml(formatCurrency(optPoint.evsi)) + '</div>';
+        html += '<div class="result-box__unit">' + escapeHtml(formatNum(optPoint.pctEVPI, 1)) + '% of EVPI captured</div>';
+        html += '</div>';
+
+        html += '<div class="result-box">';
+        html += '<div class="result-box__label">Trial Cost at Optimal n</div>';
+        html += '<div class="result-box__value">' + escapeHtml(formatCurrency(optPoint.trialCost)) + '</div>';
+        html += '<div class="result-box__unit">fixed + variable</div>';
+        html += '</div>';
+
+        html += '<div class="result-box ' + (curveData.bestNetBenefit > 0 ? 'result-box--success' : 'result-box--danger') + '">';
+        html += '<div class="result-box__label">Net Value of Research</div>';
+        html += '<div class="result-box__value">' + escapeHtml(formatCurrency(curveData.bestNetBenefit)) + '</div>';
+        html += '<div class="result-box__unit">EVSI minus cost</div>';
+        html += '</div>';
+      }
+
+      html += '</div></div>';
+
+      // Interpretation
+      html += '<div class="interpretation">';
+      if (curveData.bestNetBenefit > 0) {
+        html += '<strong>Conclusion:</strong> A new trial of <strong>' + escapeHtml(formatNum(curveData.optimalN, 0)) + ' patients</strong> ';
+        html += 'would have a positive expected net value of <strong>' + escapeHtml(formatCurrency(curveData.bestNetBenefit)) + '</strong>. ';
+        html += 'This trial would capture <strong>' + escapeHtml(formatNum(optPoint ? optPoint.pctEVPI : 0, 1)) + '%</strong> of the maximum value of perfect information. ';
+        html += 'Further research appears worthwhile.';
+      } else {
+        html += '<strong>Conclusion:</strong> At the optimal sample size of <strong>' + escapeHtml(formatNum(curveData.optimalN, 0)) + '</strong>, ';
+        html += 'the expected trial cost exceeds the expected value of the information gained. ';
+        html += 'A new trial does <strong>not</strong> appear cost-effective under these assumptions.';
+      }
+      html += '</div>';
+
+      // Plot
+      html += '<div class="card">';
+      html += '<div class="card__title">EVSI vs Trial Sample Size</div>';
+      html += '<p class="card__subtitle">Blue curve: expected value of sample information. Red dashed: trial cost. Yellow dashed: EVPI upper bound.</p>';
+      html += '<div class="plot-container" id="evsi-plot"></div>';
+      html += '</div>';
+
+      // Table
+      html += '<div class="card">';
+      html += '<div class="card__title">EVSI by Sample Size</div>';
+      html += '<table class="data-table" id="evsi-table"><thead><tr>';
+      html += '<th>n (new trial)</th><th>SE posterior</th><th>P(wrong) post</th><th>EVSI</th><th>Trial Cost</th><th>Net Value</th><th>% EVPI</th>';
+      html += '</tr></thead><tbody>';
+
+      for (var i = 0; i < pts.length; i++) {
+        var p = pts[i];
+        var rowClass = (p.n === curveData.optimalN) ? ' style="background:rgba(34,197,94,0.1); font-weight:600;"' : '';
+        html += '<tr' + rowClass + '>';
+        html += '<td>' + escapeHtml(formatNum(p.n, 0)) + '</td>';
+        html += '<td>' + escapeHtml(formatNum(p.sePosterior, 4)) + '</td>';
+        html += '<td>' + escapeHtml(formatNum(p.pWrongPost * 100, 2)) + '%</td>';
+        html += '<td>' + escapeHtml(formatCurrency(p.evsi)) + '</td>';
+        html += '<td>' + escapeHtml(formatCurrency(p.trialCost)) + '</td>';
+        html += '<td>' + escapeHtml(formatCurrency(p.netValue)) + '</td>';
+        html += '<td>' + escapeHtml(formatNum(p.pctEVPI, 1)) + '%</td>';
+        html += '</tr>';
+      }
+
+      html += '</tbody></table>';
+      html += '</div>';
+
+      $('evsi-content').innerHTML = html;
+
+      // Render SVG
+      renderEVSICurvePlot($('evsi-plot'), curveData, evpiResult);
+    }
+
+    /* ---------- Render Report Panel ---------- */
+    function renderReport(evpiResult, curveData) {
+      var html = '';
+      var optPoint = null;
+      var pts = curveData.points;
+      for (var i = 0; i < pts.length; i++) {
+        if (pts[i].n === curveData.optimalN) { optPoint = pts[i]; break; }
+      }
+
+      html += '<div class="card">';
+      html += '<div class="card__title">Methods</div>';
+      html += '<div class="report-text">';
+      html += '<p>We computed the Expected Value of Perfect Information (EVPI) and Expected Value of Sample Information (EVSI) ';
+      html += 'to assess whether additional primary research is warranted given the current meta-analytic evidence.</p>';
+
+      html += '<p>The EVPI represents the maximum expected monetary gain from eliminating all decision uncertainty. ';
+      html += 'It is calculated as EVPI = N<sub>pop</sub> &times; P(wrong decision) &times; net benefit, ';
+      html += 'where P(wrong decision) is derived from the posterior probability that the true effect lies on the opposite ';
+      html += 'side of the decision threshold from the current point estimate. The posterior uncertainty ';
+      html += 'incorporates both sampling error (SE) and between-study heterogeneity (tau&sup2;), yielding ';
+      html += 'sigma<sub>total</sub> = sqrt(SE&sup2; + tau&sup2;).</p>';
+
+      html += '<p>For EVSI, we computed the expected reduction in decision uncertainty from a hypothetical new trial ';
+      html += 'of size n. The updated posterior precision is the sum of the prior precision and the new study precision: ';
+      html += '1/SE<sub>posterior</sub>&sup2; = 1/sigma<sub>total</sub>&sup2; + n/v<sub>typical</sub>. ';
+      html += 'EVSI(n) = N<sub>pop</sub> &times; [P(wrong|current) &minus; P(wrong|updated)] &times; net benefit. ';
+      html += 'The optimal trial size maximises EVSI(n) minus total trial cost (fixed + n &times; cost per patient).</p>';
+
+      html += '<p class="ref">Claxton K (1999). The irrelevance of inference: a decision-making approach to the stochastic evaluation of health care technologies. <em>J Health Econ</em> 18(3):341-364.<br>';
+      html += 'Ades AE, Lu G, Claxton K (2004). Expected value of sample information calculations in medical decision modeling. <em>Med Decis Making</em> 24(2):207-227.<br>';
+      html += 'Welton NJ, Ades AE, Caldwell DM, Peters TJ (2012). Research prioritization based on expected value of partial perfect information: a case-study on interventions to increase uptake of breast cancer screening. <em>J R Stat Soc A</em> 175(4):807-841.</p>';
+      html += '</div></div>';
+
+      // Auto-interpretation
+      html += '<div class="card">';
+      html += '<div class="card__title">Interpretation</div>';
+      html += '<div class="report-text">';
+      html += '<p>Given current evidence (pooled effect = ' + escapeHtml(formatNum(evpiResult.mu, 3));
+      html += ', SE = ' + escapeHtml(formatNum(evpiResult.se, 3));
+      html += ', tau&sup2; = ' + escapeHtml(formatNum(evpiResult.tau2, 4));
+      html += '), the probability that the current decision (based on a threshold of ' + escapeHtml(formatNum(evpiResult.threshold, 3));
+      html += ') is wrong is <strong>' + escapeHtml(formatNum(evpiResult.pWrong * 100, 2)) + '%</strong>.</p>';
+
+      html += '<p>The expected value of resolving all uncertainty (EVPI) is <strong>' + escapeHtml(formatCurrency(evpiResult.evpi)) + '</strong>';
+      html += ' for a population of ' + escapeHtml(formatNum(evpiResult.nPop, 0)) + ' patients.</p>';
+
+      if (optPoint) {
+        html += '<p>A trial of <strong>' + escapeHtml(formatNum(curveData.optimalN, 0)) + ' patients</strong> would capture ';
+        html += '<strong>' + escapeHtml(formatNum(optPoint.pctEVPI, 1)) + '%</strong> of this value ';
+        html += 'at a cost of <strong>' + escapeHtml(formatCurrency(optPoint.trialCost)) + '</strong>';
+        if (curveData.bestNetBenefit > 0) {
+          html += ', yielding a net expected value of <strong>' + escapeHtml(formatCurrency(curveData.bestNetBenefit)) + '</strong>.';
+        } else {
+          html += '. However, the trial cost exceeds the EVSI, resulting in a negative net expected value of <strong>' + escapeHtml(formatCurrency(curveData.bestNetBenefit)) + '</strong>.';
+        }
+        html += '</p>';
+      }
+      html += '</div></div>';
+
+      // Export
+      html += '<div class="card">';
+      html += '<div class="card__title">Export</div>';
+      html += '<div style="display:flex; gap:var(--space-3); flex-wrap:wrap;">';
+      html += '<button class="btn btn--primary" id="btn-export-csv" aria-label="Export results as CSV">Export CSV</button>';
+      html += '<button class="btn btn--secondary" id="btn-export-json" aria-label="Export results as JSON">Export JSON</button>';
+      html += '</div></div>';
+
+      $('report-content').innerHTML = html;
+
+      // Bind export buttons
+      $('btn-export-csv').addEventListener('click', function() {
+        exportCSV(evpiResult, curveData);
+      });
+      $('btn-export-json').addEventListener('click', function() {
+        exportJSON(evpiResult, curveData);
+      });
+    }
+
+    /* ---------- Export CSV ---------- */
+    function exportCSV(evpiResult, curveData) {
+      var lines = [];
+      lines.push('VOI Calculator Results');
+      lines.push('');
+      lines.push('Parameter,Value');
+      lines.push(csvSafe('Pooled Effect') + ',' + csvSafe(evpiResult.mu));
+      lines.push(csvSafe('SE') + ',' + csvSafe(evpiResult.se));
+      lines.push(csvSafe('tau2') + ',' + csvSafe(evpiResult.tau2));
+      lines.push(csvSafe('Threshold') + ',' + csvSafe(evpiResult.threshold));
+      lines.push(csvSafe('Direction') + ',' + csvSafe(evpiResult.direction));
+      lines.push(csvSafe('Net Benefit') + ',' + csvSafe(evpiResult.netBenefit));
+      lines.push(csvSafe('N_pop') + ',' + csvSafe(evpiResult.nPop));
+      lines.push(csvSafe('Sigma Total') + ',' + csvSafe(evpiResult.sigmaTotal));
+      lines.push(csvSafe('P(wrong)') + ',' + csvSafe(evpiResult.pWrong));
+      lines.push(csvSafe('EVPI') + ',' + csvSafe(evpiResult.evpi));
+      lines.push(csvSafe('EVPI per patient') + ',' + csvSafe(evpiResult.evpiPerPatient));
+      lines.push('');
+      lines.push('EVSI by Sample Size');
+      lines.push('n,SE_posterior,P_wrong_post,EVSI,Trial_Cost,Net_Value,Pct_EVPI');
+
+      var pts = curveData.points;
+      for (var i = 0; i < pts.length; i++) {
+        var p = pts[i];
+        lines.push([p.n, p.sePosterior, p.pWrongPost, p.evsi, p.trialCost, p.netValue, p.pctEVPI].map(csvSafe).join(','));
+      }
+
+      lines.push('');
+      lines.push(csvSafe('Optimal n') + ',' + csvSafe(curveData.optimalN));
+      lines.push(csvSafe('Best Net Value') + ',' + csvSafe(curveData.bestNetBenefit));
+
+      var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      downloadBlob(blob, 'voi-results.csv');
+    }
+
+    /* ---------- Export JSON ---------- */
+    function exportJSON(evpiResult, curveData) {
+      var data = {
+        evpi: {
+          mu: evpiResult.mu,
+          se: evpiResult.se,
+          tau2: evpiResult.tau2,
+          threshold: evpiResult.threshold,
+          direction: evpiResult.direction,
+          netBenefit: evpiResult.netBenefit,
+          nPop: evpiResult.nPop,
+          sigmaTotal: evpiResult.sigmaTotal,
+          pWrong: evpiResult.pWrong,
+          evpi: evpiResult.evpi,
+          evpiPerPatient: evpiResult.evpiPerPatient
+        },
+        evsi: {
+          optimalN: curveData.optimalN,
+          bestNetBenefit: curveData.bestNetBenefit,
+          curve: curveData.points
+        }
+      };
+      var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, 'voi-results.json');
+    }
+
+    /* ---------- Download Blob ---------- */
+    function downloadBlob(blob, filename) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    /* ---------- Read Inputs ---------- */
+    function readInputs() {
+      var effect    = parseFloat($('inp-effect').value);
+      var se        = parseFloat($('inp-se').value);
+      var tau2      = parseFloat($('inp-tau2').value);
+      var k         = parseInt($('inp-k').value, 10);
+      var threshold = parseFloat($('inp-threshold').value);
+      var direction = $('inp-direction').value;
+      var benefit   = parseFloat($('inp-benefit').value);
+      var nPop      = parseInt($('inp-npop').value, 10);
+      var costPat   = parseFloat($('inp-cost-patient').value);
+      var vTypical  = parseFloat($('inp-v-typical').value);
+      var fixedCost = parseFloat($('inp-fixed-cost').value);
+
+      // Validate
+      var errors = [];
+      if (!isFinite(effect))    errors.push('Pooled effect is required.');
+      if (!isFinite(se) || se <= 0) errors.push('SE must be positive.');
+      if (!isFinite(tau2) || tau2 < 0) { tau2 = 0; $('inp-tau2').value = '0'; }
+      if (!isFinite(threshold)) errors.push('Decision threshold is required.');
+      if (!isFinite(benefit) || benefit <= 0) errors.push('Net benefit must be positive.');
+      if (!isFinite(nPop) || nPop < 1)   errors.push('Population must be >= 1.');
+      if (!isFinite(costPat) || costPat < 0) errors.push('Cost per patient must be >= 0.');
+      if (!isFinite(vTypical) || vTypical <= 0) errors.push('Typical within-study variance must be positive.');
+      if (!isFinite(fixedCost) || fixedCost < 0) { fixedCost = 0; $('inp-fixed-cost').value = '0'; }
+
+      if (errors.length > 0) {
+        return { valid: false, errors: errors };
+      }
+
+      return {
+        valid: true,
+        effect: effect,
+        se: se,
+        tau2: tau2,
+        k: k,
+        threshold: threshold,
+        direction: direction,
+        benefit: benefit,
+        nPop: nPop,
+        costPerPatient: costPat,
+        vTypical: vTypical,
+        fixedCost: fixedCost
+      };
+    }
+
+    /* ---------- Compute & Render All ---------- */
+    function computeAll() {
+      var inp = readInputs();
+      if (!inp.valid) {
+        alert('Please fix the following:\n\n' + inp.errors.join('\n'));
+        return;
+      }
+
+      // EVPI
+      var evpiResult = calcEVPI(inp.effect, inp.se, inp.tau2, inp.threshold, inp.direction, inp.benefit, inp.nPop);
+
+      // EVSI curve
+      var curveData = calcEVSICurve(evpiResult, inp.vTypical, inp.costPerPatient, inp.fixedCost);
+
+      // Render all panels
+      renderEVPI(evpiResult);
+      renderEVSI(evpiResult, curveData);
+      renderReport(evpiResult, curveData);
+
+      // Switch to EVPI tab
+      activateTab($('tab-evpi'));
+
+      // Store last computation for export reference
+      window.__voiLastResult = { evpi: evpiResult, curve: curveData };
+    }
+
+    /* ---------- Tab Management ---------- */
+    function activateTab(selectedTab) {
+      tabs.forEach(function(tab) {
+        var selected = (tab === selectedTab);
+        tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+        tab.setAttribute('tabindex', selected ? '0' : '-1');
+        var panelId = tab.getAttribute('aria-controls');
+        var panel = $(panelId);
+        if (panel) {
+          panel.setAttribute('aria-hidden', selected ? 'false' : 'true');
+        }
+      });
+      selectedTab.focus();
+    }
+
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        activateTab(tab);
+      });
+
+      tab.addEventListener('keydown', function(e) {
+        var tabArr = Array.prototype.slice.call(tabs);
+        var idx = tabArr.indexOf(tab);
+        var newIdx = idx;
+
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          newIdx = (idx + 1) % tabArr.length;
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          newIdx = (idx - 1 + tabArr.length) % tabArr.length;
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          newIdx = 0;
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          newIdx = tabArr.length - 1;
+        }
+
+        if (newIdx !== idx) {
+          activateTab(tabArr[newIdx]);
+        }
+      });
+    });
+
+    /* ---------- Dark Mode ---------- */
+    function applyDarkMode(dark) {
+      document.documentElement.classList.toggle('dark', dark);
+      try { localStorage.setItem(DARK_KEY, dark ? '1' : '0'); } catch(e) {}
+    }
+
+    (function initDark() {
+      var stored = null;
+      try { stored = localStorage.getItem(DARK_KEY); } catch(e) {}
+      if (stored === '1') {
+        applyDarkMode(true);
+      } else if (stored === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        applyDarkMode(true);
+      }
+    })();
+
+    $('btn-dark-mode').addEventListener('click', function() {
+      var isDark = document.documentElement.classList.contains('dark');
+      applyDarkMode(!isDark);
+    });
+
+    /* ---------- Save / Load / Clear ---------- */
+    function saveToStorage() {
+      var data = {};
+      var ids = ['inp-effect', 'inp-se', 'inp-tau2', 'inp-k', 'inp-threshold',
+                 'inp-direction', 'inp-benefit', 'inp-npop', 'inp-cost-patient',
+                 'inp-v-typical', 'inp-fixed-cost'];
+      ids.forEach(function(id) {
+        var el = $(id);
+        data[id] = el ? el.value : '';
+      });
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        alert('Inputs saved.');
+      } catch(e) {
+        alert('Could not save: ' + e.message);
+      }
+    }
+
+    function loadFromStorage() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) { alert('No saved data found.'); return; }
+        var data = JSON.parse(raw);
+        for (var id in data) {
+          if (data.hasOwnProperty(id)) {
+            var el = $(id);
+            if (el) el.value = data[id];
+          }
+        }
+        alert('Inputs loaded.');
+      } catch(e) {
+        alert('Could not load: ' + e.message);
+      }
+    }
+
+    function clearInputs() {
+      var ids = ['inp-effect', 'inp-se', 'inp-tau2', 'inp-k', 'inp-threshold',
+                 'inp-benefit', 'inp-npop', 'inp-cost-patient', 'inp-v-typical', 'inp-fixed-cost'];
+      ids.forEach(function(id) {
+        var el = $(id);
+        if (el) el.value = '';
+      });
+      $('inp-tau2').value = '0';
+      $('inp-k').value = '5';
+      $('inp-fixed-cost').value = '0';
+      $('inp-direction').value = 'below';
+    }
+
+    $('btn-compute').addEventListener('click', computeAll);
+    $('btn-save').addEventListener('click', saveToStorage);
+    $('btn-load').addEventListener('click', loadFromStorage);
+    $('btn-clear').addEventListener('click', clearInputs);
+
+    /* ---------- Examples ---------- */
+    function loadExample(data) {
+      for (var id in data) {
+        if (data.hasOwnProperty(id)) {
+          var el = $(id);
+          if (el) el.value = data[id];
+        }
+      }
+    }
+
+    $('ex-txa').addEventListener('click', function() {
+      loadExample({
+        'inp-effect':       '-0.28',      // log-OR for TXA in trauma (CRASH-2 style, clear benefit)
+        'inp-se':           '0.06',
+        'inp-tau2':         '0.005',
+        'inp-k':            '8',
+        'inp-threshold':    '0',          // log-OR < 0 means benefit
+        'inp-direction':    'below',
+        'inp-benefit':      '50000',      // value of correct decision per patient
+        'inp-npop':         '200000',     // trauma patients per year
+        'inp-cost-patient': '3000',
+        'inp-v-typical':    '0.25',
+        'inp-fixed-cost':   '500000'
+      });
+      $('inp-direction').value = 'below';
+    });
+
+    $('ex-glucose').addEventListener('click', function() {
+      loadExample({
+        'inp-effect':       '-0.05',      // Small uncertain effect (log-OR for mortality)
+        'inp-se':           '0.12',
+        'inp-tau2':         '0.04',
+        'inp-k':            '4',
+        'inp-threshold':    '0',
+        'inp-direction':    'below',
+        'inp-benefit':      '40000',
+        'inp-npop':         '500000',     // ICU patients per year
+        'inp-cost-patient': '8000',
+        'inp-v-typical':    '0.6',
+        'inp-fixed-cost':   '1000000'
+      });
+      $('inp-direction').value = 'below';
+    });
+
+    /* ---------- Keyboard: Enter to compute ---------- */
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+        computeAll();
+      }
+    });
+
+    /* ---------- Expose for testing ---------- */
+    window.VOICalc = {
+      normalCDF: normalCDF,
+      normalPDF: normalPDF,
+      calcEVPI: calcEVPI,
+      calcEVSI: calcEVSI,
+      calcEVSICurve: calcEVSICurve,
+      escapeHtml: escapeHtml,
+      csvSafe: csvSafe,
+      formatNum: formatNum,
+      formatCurrency: formatCurrency,
+      readInputs: readInputs,
+      computeAll: computeAll,
+      loadExample: loadExample,
+      STORAGE_KEY: STORAGE_KEY
+    };
+
+  })();
+  </script>
+</body>
+</html>
