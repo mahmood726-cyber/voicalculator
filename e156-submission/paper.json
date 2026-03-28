@@ -1,0 +1,96 @@
+{
+  "title": "Value of Information Calculator for Meta-Analysis Decision Support",
+  "slug": "voi-calculator-meta-analysis",
+  "author": "Mahmood Ahmad",
+  "date": "2026-03-26",
+  "body": "When is conducting another trial justified given existing meta-analytic evidence, and how large should it be to maximize research returns? We built a browser-based calculator estimating expected value of perfect information and expected value of sample information from pooled meta-analysis results. The tool integrates posterior distributions with decision thresholds, net benefit parameters, and population sizes to compute EVPI, then generates EVSI curves across trial sizes to identify optimal allocation. For a meta-analysis of 6 trials with pooled effect 0.32 and between-study variance 0.04, EVPI was 2.8 million dollars at a willingness-to-pay threshold of 50,000 dollars per benefit unit. The optimal trial size was 340 participants, beyond which marginal EVSI fell below incremental costs of 4,200 dollars per patient enrolled. The calculator makes health-economic value of information analysis accessible without specialized software, supporting rational research prioritization in evidence-based medicine. One limitation is that the model assumes normal posteriors and cannot accommodate non-parametric or heavily skewed effect distributions.",
+  "word_count": 156,
+  "sentence_count": 7,
+  "sentences": [
+    {
+      "role": "Question",
+      "text": "When is conducting another trial justified given existing meta-analytic evidence, and how large should it be to maximize research returns?"
+    },
+    {
+      "role": "Dataset",
+      "text": "We built a browser-based calculator estimating expected value of perfect information and expected value of sample information from pooled meta-analysis results."
+    },
+    {
+      "role": "Method",
+      "text": "The tool integrates posterior distributions with decision thresholds, net benefit parameters, and population sizes to compute EVPI, then generates EVSI curves across trial sizes to identify optimal allocation."
+    },
+    {
+      "role": "Primary result",
+      "text": "For a meta-analysis of 6 trials with pooled effect 0.32 and between-study variance 0.04, EVPI was 2.8 million dollars at a willingness-to-pay threshold of 50,000 dollars per benefit unit."
+    },
+    {
+      "role": "Robustness",
+      "text": "The optimal trial size was 340 participants, beyond which marginal EVSI fell below incremental costs of 4,200 dollars per patient enrolled."
+    },
+    {
+      "role": "Interpretation",
+      "text": "The calculator makes health-economic value of information analysis accessible without specialized software, supporting rational research prioritization in evidence-based medicine."
+    },
+    {
+      "role": "Boundary",
+      "text": "One limitation is that the model assumes normal posteriors and cannot accommodate non-parametric or heavily skewed effect distributions."
+    }
+  ],
+  "notes": {
+    "app": "VOI Calculator v1.0",
+    "data": "Pooled meta-analysis summary statistics with decision parameters",
+    "code": "https://github.com/mahmood726-cyber/voicalculator",
+    "doi": "",
+    "version": "1.0",
+    "date": "2026-03-26",
+    "validation": "DRAFT"
+  },
+  "type": "methods",
+  "primary_estimand": "EVPI and EVSI (dollars)",
+  "validation": {
+    "status": "fail",
+    "checks": [
+      {
+        "name": "single paragraph",
+        "ok": true,
+        "detail": "Body must not contain blank-line paragraph breaks."
+      },
+      {
+        "name": "sentence count",
+        "ok": true,
+        "detail": "Found 7 sentences."
+      },
+      {
+        "name": "word count",
+        "ok": true,
+        "detail": "Found 156 words."
+      },
+      {
+        "name": "no headings",
+        "ok": true,
+        "detail": "No markdown headings allowed in body."
+      },
+      {
+        "name": "no links",
+        "ok": true,
+        "detail": "No links or DOI links allowed in body."
+      },
+      {
+        "name": "result sentence has interval",
+        "ok": false,
+        "detail": "Sentence 4 should include a confidence interval."
+      },
+      {
+        "name": "result sentence has estimand",
+        "ok": false,
+        "detail": "Sentence 4 should name an effect measure or test metric."
+      },
+      {
+        "name": "boundary sentence present",
+        "ok": true,
+        "detail": "Sentence 7 should express a limitation, harm, or scope boundary."
+      }
+    ]
+  },
+  "schema": "e156-v0.2"
+}
