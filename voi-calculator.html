@@ -525,9 +525,12 @@
     .text-xs { font-size: var(--text-xs); }
     .mono { font-family: var(--font-mono); }
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .skip-nav { position: absolute; left: -9999px; top: auto; }
+    .skip-nav:focus { position: fixed; left: 0; top: 0; z-index: 999; padding: 8px 16px; background: var(--color-primary-600); color: #fff; text-decoration: none; border-radius: 0 0 8px 0; font-size: var(--text-sm); }
   </style>
 </head>
 <body>
+  <a href="#panel-input" class="skip-nav">Skip to content</a>
 
   <!-- ===== Header ===== -->
   <header class="app-header">
